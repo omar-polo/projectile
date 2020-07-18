@@ -312,6 +312,7 @@ See `projectile-register-project-type'."
 
 (defcustom projectile-project-root-files-bottom-up
   '(".projectile" ; projectile project marker
+    ".got"        ; Got VCS root dir
     ".git"        ; Git VCS root dir
     ".hg"         ; Mercurial VCS root dir
     ".fslckout"   ; Fossil VCS root dir
@@ -380,6 +381,7 @@ Regular expressions can be used."
     ".ensime_cache"
     ".eunit"
     ".git"
+    ".got"
     ".hg"
     ".fslckout"
     "_FOSSIL_"
@@ -617,6 +619,11 @@ Set to nil to disable listing submodules contents."
   :group 'projectile
   :type 'string
   :package-version '(projectile . "0.14.0"))
+
+(defcustom projectile-got-command "got tree -R | tr '\\n' '\\0'"
+  "Command used by projectile to get the files in a got worktree."
+  :group 'projectile
+  :type 'string)
 
 (defcustom projectile-hg-command "hg locate -f -0 -I ."
   "Command used by projectile to get the files in a hg project."
@@ -1236,6 +1243,7 @@ IGNORED-DIRECTORIES may optionally be provided."
 Fallback to a generic command when not in a VCS-controlled project."
   (pcase vcs
     ('git projectile-git-command)
+    ('got projectile-got-command)
     ('hg projectile-hg-command)
     ('fossil projectile-fossil-command)
     ('bzr projectile-bzr-command)
@@ -2900,6 +2908,7 @@ PROJECT-ROOT is the targeted directory.  If nil, use
 `projectile-project-root'."
   (or project-root (setq project-root (projectile-project-root)))
   (cond
+   ((projectile-file-exists-p (expand-file-name ".got" project-root)) 'got)
    ((projectile-file-exists-p (expand-file-name ".git" project-root)) 'git)
    ((projectile-file-exists-p (expand-file-name ".hg" project-root)) 'hg)
    ((projectile-file-exists-p (expand-file-name ".fslckout" project-root)) 'fossil)
@@ -2907,6 +2916,7 @@ PROJECT-ROOT is the targeted directory.  If nil, use
    ((projectile-file-exists-p (expand-file-name ".bzr" project-root)) 'bzr)
    ((projectile-file-exists-p (expand-file-name "_darcs" project-root)) 'darcs)
    ((projectile-file-exists-p (expand-file-name ".svn" project-root)) 'svn)
+   ((projectile-locate-dominating-file project-root ".got") 'got)
    ((projectile-locate-dominating-file project-root ".git") 'git)
    ((projectile-locate-dominating-file project-root ".hg") 'hg)
    ((projectile-locate-dominating-file project-root ".fslckout") 'fossil)
